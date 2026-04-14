@@ -14,6 +14,7 @@ import CourseManagementPage from './pages/CourseManagementPage'
 import PreferencesPage from './pages/PreferencesPage'
 import AdminPage from './pages/AdminPage'
 import AdminLoginPage from './pages/AdminLoginPage'
+import SSOCallback from './pages/SSOCallback'
 import { getUserRole } from './utils/roles'
 import { authApi } from './services/api'
 
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/sso-callback" element={<SSOCallback />} />
 
         <Route
           path="/admin"
