@@ -4,38 +4,42 @@ import StatCard from '../components/ui/StatCard'
 import Badge from '../components/ui/Badge'
 import { dashboardStats, leaderboard } from '../utils/mockData'
 import { useAppStore } from '../hooks/useAppStore'
+import { t } from '../utils/i18n'
+import { useUser } from '@clerk/clerk-react'
 
 export default function DashboardPage({ points, level, streak }) {
-  const { timeSpentMinutes, moduleProgress, challenges } = useAppStore()
+  const { timeSpentMinutes, moduleProgress, challenges, language } = useAppStore()
+  const { user } = useUser()
   const completionRate = Math.round(
-    (moduleProgress.filter((module) => module.completed).length / moduleProgress.length) * 100,
+    (moduleProgress.filter((m) => m.completed).length / moduleProgress.length) * 100,
   )
+  const name = user?.firstName || user?.username || 'Learner'
 
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-sm text-slate-300">Welcome back, Rahul 👋</p>
-        <h1 className="mt-2 text-2xl font-bold text-white">Your multilingual momentum is strong today.</h1>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <p className="text-sm text-slate-300">{t(language, 'welcomeBack')}, {name} 👋</p>
+        <h1 className="mt-2 text-2xl font-bold text-white">{t(language, 'momentum')}</h1>
+        <div className="mt-4 grid gap-4 md:grid-cols-4">
           <div>
-            <p className="text-sm text-slate-300">Points</p>
+            <p className="text-sm text-slate-300">{t(language, 'points')}</p>
             <p className="text-2xl font-bold text-indigo-300">{points}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-300">Current Level</p>
+            <p className="text-sm text-slate-300">{t(language, 'currentLevel')}</p>
             <p className="text-2xl font-bold text-white">{level}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-300">Daily Streak</p>
-            <p className="text-2xl font-bold text-orange-300">{streak} days</p>
+            <p className="text-sm text-slate-300">{t(language, 'dailyStreak')}</p>
+            <p className="text-2xl font-bold text-orange-300">{streak} {t(language, 'days')}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-300">Time Spent</p>
-            <p className="text-2xl font-bold text-cyan-300">{timeSpentMinutes} mins</p>
+            <p className="text-sm text-slate-300">{t(language, 'timeSpent')}</p>
+            <p className="text-2xl font-bold text-cyan-300">{timeSpentMinutes} {t(language, 'mins')}</p>
           </div>
         </div>
         <div className="mt-4">
-          <ProgressBar value={completionRate} label="Module completion rate" />
+          <ProgressBar value={completionRate} label={t(language, 'moduleCompletion')} />
         </div>
       </Card>
 
@@ -45,7 +49,7 @@ export default function DashboardPage({ points, level, streak }) {
         ))}
       </div>
 
-      <Card title="Leaderboard Preview" subtitle="Top learners this week">
+      <Card title={t(language, 'leaderboard')} subtitle={t(language, 'topLearners')}>
         <div className="space-y-3">
           {leaderboard.map((player, index) => (
             <div key={player.name} className="flex items-center justify-between rounded-xl bg-slate-900/40 p-3">
@@ -62,7 +66,7 @@ export default function DashboardPage({ points, level, streak }) {
         </div>
       </Card>
 
-      <Card title="Active Challenges" subtitle="Daily/weekly tasks to maintain momentum">
+      <Card title={t(language, 'activeChallenges')} subtitle={t(language, 'challengeSubtitle')}>
         <div className="space-y-2">
           {challenges.map((challenge) => (
             <div key={challenge.id} className="rounded-lg bg-slate-900/40 p-3 text-sm text-slate-100">

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { authApi, setAuthToken } from '../services/api'
+import httpClient from '../utils/httpClient'
 import { AuthContext } from './authContextValue'
 
 export function AuthProvider({ children }) {
@@ -8,7 +9,9 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!token) {
-      setAuthToken(null)
+      // only clear if no clerk token is already set
+      const current = httpClient.defaults.headers.common.Authorization || ''
+      if (!current.includes('clerk:')) setAuthToken(null)
       return
     }
     setAuthToken(token)

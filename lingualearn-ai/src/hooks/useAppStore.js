@@ -35,7 +35,14 @@ export const useAppStore = create((set) => ({
     targetLanguage: 'Spanish',
     academicLevel: 'Beginner',
     accessibilityNeeds: 'High contrast',
+    preferredLanguages: ['Spanish'],
+    studyBackground: '',
+    studyField: '',
   },
+  userProfile: null,
+  onboardingComplete: true,
+  lectureHistory: [],
+  mistakeBank: [],
   performance: {
     averageScore: 72,
     recentQuizScores: [68, 75, 73],
@@ -132,6 +139,20 @@ export const useAppStore = create((set) => ({
     set((state) => ({
       courses: [...state.courses, { ...course, id: `c${state.courses.length + 1}` }],
     })),
+  setUserProfile: (profile) =>
+    set((state) => ({
+      userProfile: profile,
+      onboardingComplete: true,
+      preferences: {
+        ...state.preferences,
+        nativeLanguage: profile.preferredLanguage || state.preferences.nativeLanguage,
+        targetLanguage: profile.targetLanguage || state.preferences.targetLanguage,
+        academicLevel: profile.academicLevel || state.preferences.academicLevel,
+        preferredLanguages: profile.preferredLanguages?.length ? profile.preferredLanguages : state.preferences.preferredLanguages,
+        studyBackground: profile.studyBackground || '',
+        studyField: profile.studyField || '',
+      },
+    })),
   updatePreferences: (preferences) =>
     set((state) => ({
       preferences: { ...state.preferences, ...preferences },
@@ -141,6 +162,31 @@ export const useAppStore = create((set) => ({
       theme: state.theme === 'dark' ? 'light' : 'dark',
     })),
   incrementPoints: (delta) => set((state) => ({ points: state.points + delta })),
+  addLectureHistory: (lecture) =>
+    set((state) => ({
+      lectureHistory: [{ ...lecture, id: Date.now(), date: new Date().toISOString() }, ...state.lectureHistory].slice(0, 20),
+    })),
+  addMistakes: (mistakes) =>
+    set((state) => {
+      const updated = [...state.mistakeBank]
+      mistakes.forEach((m) => {
+        const existing = updated.findIndex((x) => x.topic === m.topic)
+        if (existing >= 0) {
+          updated[existing] = { ...updated[existing], count: updated[existing].count + 1, lastSeen: new Date().toISOString() }
+        } else {
+          updated.push({ topic: m.topic, question: m.question, wrongAnswer: m.wrongAnswer, correctAnswer: m.correctAnswer, count: 1, lastSeen: new Date().toISOString() })
+        }
+      })
+      return { mistakeBank: updated }
+    }),
+  recordTestResult: (result) =>
+    set((state) => ({
+      points: state.points + result.pointsEarned,
+      performance: {
+        averageScore: Math.round((state.performance.averageScore + result.score) / 2),
+        recentQuizScores: [...state.performance.recentQuizScores, result.score].slice(-6),
+      },
+    })),
   getAdaptivePathForUser: () =>
     getAdaptivePath({
       averageScore: useAppStore.getState().performance.averageScore,

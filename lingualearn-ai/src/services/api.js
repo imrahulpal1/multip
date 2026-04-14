@@ -21,6 +21,14 @@ export const authApi = {
     const { data } = await httpClient.get('/auth/me')
     return data
   },
+  checkEmail: async (email) => {
+    const { data } = await httpClient.get(`/auth/check-email?email=${encodeURIComponent(email)}`)
+    return data
+  },
+  saveProfile: async (payload) => {
+    const { data } = await httpClient.post('/auth/save-profile', payload)
+    return data
+  },
   updatePreferences: async (payload) => {
     const { data } = await httpClient.patch('/auth/preferences', payload)
     return data
@@ -50,6 +58,9 @@ export const aiApi = {
   chat: async (payload) => (await httpClient.post('/ai/chat', payload)).data,
   summarize: async (payload) => (await httpClient.post('/ai/summarize', payload)).data,
   explain: async (payload) => (await httpClient.post('/ai/explain', payload)).data,
+  processFile: async (payload) => (await httpClient.post('/ai/process-file', payload)).data,
+  generateTest: async (payload) => (await httpClient.post('/ai/generate-test', payload)).data,
+  analyzeLecture: async (payload) => (await httpClient.post('/ai/analyze-lecture', payload)).data,
 }
 
 export const forumApi = {

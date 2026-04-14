@@ -83,6 +83,46 @@ export const progressData = [
   { day: 'Sun', vocabulary: 86, grammar: 74, speaking: 62 },
 ]
 
+export const mockLecture = {
+  title: 'Introduction to Contextual Language Acquisition',
+  subject: 'Linguistics',
+  language: 'Spanish',
+  duration: '48 min',
+  summary:
+    'This lecture explores how contextual cues accelerate second-language acquisition. Learners exposed to real-world scenarios retain vocabulary 45% faster than rote memorization methods.',
+  multilingualSummary: {
+    Spanish:
+      'Esta conferencia explora cómo las señales contextuales aceleran la adquisición de un segundo idioma.',
+    French:
+      "Cette conférence explore comment les indices contextuels accélèrent l'acquisition d'une deuxième langue.",
+    German:
+      'Diese Vorlesung untersucht, wie kontextuelle Hinweise den Zweitspracherwerb beschleunigen.',
+  },
+  keyTerms: [
+    { term: 'Contextual Acquisition', definition: 'Learning language through real-world context rather than isolated rules.' },
+    { term: 'Retention Rate', definition: 'The percentage of information retained after a learning session.' },
+    { term: 'Micro-practice', definition: 'Short, frequent practice sessions that reinforce memory pathways.' },
+    { term: 'Fluency Threshold', definition: 'The point at which a learner can communicate without conscious effort.' },
+  ],
+  flashcards: [
+    { q: 'What is contextual acquisition?', a: 'Learning through real-world context.' },
+    { q: 'How much faster is contextual learning?', a: '45% faster than rote memorization.' },
+    { q: 'What is micro-practice?', a: 'Short, frequent sessions to reinforce memory.' },
+  ],
+  quiz: [
+    {
+      question: 'Contextual learning improves retention by approximately:',
+      options: ['15%', '30%', '45%', '60%'],
+      answer: 2,
+    },
+    {
+      question: 'Micro-practice sessions are best described as:',
+      options: ['Long daily sessions', 'Short frequent sessions', 'Weekly reviews', 'Passive listening'],
+      answer: 1,
+    },
+  ],
+}
+
 export const timeline = [
   'Completed lecture summary in Spanish.',
   'Unlocked Quiz Master badge.',

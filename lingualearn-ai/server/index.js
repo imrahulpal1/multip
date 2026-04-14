@@ -11,6 +11,7 @@ import aiRoutes from './routes/aiRoutes.js'
 import gamificationRoutes from './routes/gamificationRoutes.js'
 import discussionRoutes from './routes/discussionRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
+import { setIo } from './controllers/discussionController.js'
 import { seedCoursesIfEmpty } from './utils/seedCourses.js'
 import { seedAdminIfMissing } from './utils/seedAdmin.js'
 
@@ -21,7 +22,7 @@ const io = new Server(server, {
 })
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '20mb' }))
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
@@ -33,6 +34,7 @@ app.use('/api/discussions', discussionRoutes)
 app.use('/api/admin', adminRoutes)
 
 io.on('connection', (socket) => {
+  setIo(io)
   socket.on('chat:message', (payload) => {
     io.emit('chat:message', payload)
   })
