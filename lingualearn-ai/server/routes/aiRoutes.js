@@ -8,6 +8,6 @@ router.post('/summarize', summarize)
 router.post('/explain', explain)
 router.post('/process-file', processFile)
 router.post('/generate-test', generateTest)
-router.post('/analyze-lecture', requireAuth, analyzeLecture)
+router.post('/analyze-lecture', analyzeLecture)
 
 export default router

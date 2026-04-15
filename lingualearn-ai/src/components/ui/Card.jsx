@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 
-export default function Card({ title, subtitle, children, className }) {
+export default function Card({ title, subtitle, children, className, action }) {
   return (
     <section
       className={clsx(
@@ -8,10 +8,13 @@ export default function Card({ title, subtitle, children, className }) {
         className,
       )}
     >
-      {(title || subtitle) && (
-        <header className="mb-4">
-          {title && <h3 className="text-lg font-semibold text-white">{title}</h3>}
-          {subtitle && <p className="text-sm text-slate-300">{subtitle}</p>}
+      {(title || subtitle || action) && (
+        <header className="mb-4 flex items-center justify-between gap-2">
+          <div>
+            {title && <h3 className="text-lg font-semibold text-white">{title}</h3>}
+            {subtitle && <p className="text-sm text-slate-300">{subtitle}</p>}
+          </div>
+          {action && <div>{action}</div>}
         </header>
       )}
       {children}

@@ -32,6 +32,21 @@ export const explain = async (req, res) => {
   res.json({ result })
 }
 
+const CHUNK_SIZE = 6000 // chars per chunk (~1500 tokens)
+
+const chunkText = (text) => {
+  const chunks = []
+  for (let i = 0; i < text.length; i += CHUNK_SIZE) chunks.push(text.slice(i, i + CHUNK_SIZE))
+  return chunks
+}
+
+const buildTranslationPrompt = (language, chunk, index, total) => ({
+  system: `You are a professional translator. You MUST translate everything into ${language}. NEVER respond in English unless ${language} is English. Output ONLY the translated text — no explanations, no notes, no original text.`,
+  user: `Translate the following text COMPLETELY into ${language}.${
+    total > 1 ? ` (Part ${index + 1} of ${total})` : ''
+  }\n\nText:\n${chunk}`,
+})
+
 const buildProcessPrompt = (language, exampleLanguage, discipline) => `
 You are LinguaLearn AI, an expert multilingual academic tutor.
 
@@ -42,7 +57,6 @@ Carefully read ALL the content provided and base your response entirely on it.
 Return ONLY valid JSON (no markdown fences) with this exact structure:
 {
   "title": "short descriptive title based on the actual content",
-  "translation": "full accurate translation of the entire content into ${language}",
   "explanation": "thorough explanation of the main concepts found in the content, written in ${language}, with subject-specific context for ${discipline}",
   "keyTerms": [
     {
@@ -59,10 +73,21 @@ Return ONLY valid JSON (no markdown fences) with this exact structure:
 Pick 5-6 most important terms directly from the content. All examples must be original sentences you write, not copied from the content.
 `
 
+const translateFullText = async (text, language) => {
+  const chunks = chunkText(text)
+  const parts = await Promise.all(
+    chunks.map((chunk, i) => {
+      const { system, user } = buildTranslationPrompt(language, chunk, i, chunks.length)
+      return askOpenAI(user, `[${language}] ${chunk.slice(0, 100)}...`, system)
+    })
+  )
+  return parts.join('\n')
+}
+
 export const processFile = async (req, res) => {
   const { text, fileBase64, fileType, fileName, language = 'English', exampleLanguage = 'English', discipline = 'General' } = req.body
 
-  const prompt = buildProcessPrompt(language, exampleLanguage, discipline)
+  const analysisPrompt = buildProcessPrompt(language, exampleLanguage, discipline)
 
   const makeFallback = (src) => JSON.stringify({
     title: fileName || 'Uploaded Lecture',
@@ -81,32 +106,71 @@ export const processFile = async (req, res) => {
   })
 
   try {
-    let raw
+    let sourceText = ''
 
     if (fileBase64 && fileType) {
-      // Image file — use GPT-4o vision
       if (fileType.startsWith('image/')) {
-        raw = await askOpenAIWithFile({ prompt, fileBase64, fileType, fallback: makeFallback('image content') })
-      } else {
-        // PDF — extract real text with pdf-parse
-        const pdfBuffer = Buffer.from(fileBase64, 'base64')
-        let textContent = ''
+        // Image: translate via vision model, then run analysis
+        const [translation, raw] = await Promise.all([
+          askOpenAIWithFile({
+            prompt: `Translate ALL text visible in this image completely into ${language}. Output ONLY the translated text.`,
+            fileBase64, fileType,
+            fallback: `[${language}] Image content`,
+            systemPrompt: `You are a professional translator. You MUST translate everything into ${language}. NEVER respond in English unless ${language} is English.`,
+          }),
+          askOpenAIWithFile({
+            prompt: analysisPrompt, fileBase64, fileType, fallback: makeFallback('image content'),
+            systemPrompt: `You are LinguaLearn AI. ALL output must be in ${language} only. Return only valid JSON.`,
+          }),
+        ])
         try {
-          const parsed = await pdfParse(pdfBuffer)
-          textContent = parsed.text.slice(0, 8000)
-        } catch (e) {
-          console.error('[pdf-parse]', e.message)
-          textContent = '(PDF text extraction failed)'
+          const parsed = JSON.parse(raw)
+          parsed.translation = translation
+          return res.json(parsed)
+        } catch {
+          return res.json(JSON.parse(makeFallback('image content')))
         }
-        raw = await askOpenAI(`${prompt}\n\nContent extracted from ${fileName}:\n${textContent}`, makeFallback(textContent))
+      } else {
+        // PDF — extract full text, no slice
+        const pdfBuffer = Buffer.from(fileBase64, 'base64')
+        try {
+          const pdfResult = await pdfParse(pdfBuffer)
+          sourceText = pdfResult.text?.trim()
+          console.log(`[pdf-parse] extracted ${sourceText?.length} chars from ${fileName}`)
+          if (!sourceText) throw new Error('Empty text extracted')
+        } catch (e) {
+          console.error('[pdf-parse] failed:', e.message)
+          // Fallback: treat the base64 as raw text if pdf-parse fails
+          sourceText = Buffer.from(fileBase64, 'base64').toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ').trim()
+          if (!sourceText || sourceText.length < 20) {
+            return res.status(422).json({ message: `Could not extract text from PDF: ${e.message}` })
+          }
+        }
       }
     } else if (text) {
-      raw = await askOpenAI(`${prompt}\n\nContent:\n${text}`, makeFallback(text))
+      sourceText = text
     } else {
       return res.status(400).json({ message: 'No content provided' })
     }
 
-    try { return res.json(JSON.parse(raw)) } catch { return res.json(JSON.parse(makeFallback(text || ''))) }
+    // Run full translation (chunked) + analysis in parallel
+    const analysisInput = sourceText.slice(0, 12000) // analysis uses first 12k chars for context
+    const [translation, raw] = await Promise.all([
+      translateFullText(sourceText, language),
+      askOpenAI(
+        `${analysisPrompt}\n\nContent:\n${analysisInput}`,
+        makeFallback(analysisInput),
+        `You are LinguaLearn AI. ALL text in your JSON response (explanation, meanings, examples) MUST be written in ${language}. Return only valid JSON, no markdown.`
+      ),
+    ])
+
+    try {
+      const parsed = JSON.parse(raw)
+      parsed.translation = translation
+      return res.json(parsed)
+    } catch {
+      return res.json(JSON.parse(makeFallback(sourceText)))
+    }
   } catch (err) {
     console.error('[processFile]', err.message)
     return res.json(JSON.parse(makeFallback(text || '')))

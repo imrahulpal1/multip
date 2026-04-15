@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, useUser, useAuth } from '@clerk/clerk-react'
 import Sidebar from './components/layout/Sidebar'
 import TopNavbar from './components/layout/TopNavbar'
 import MobileNav from './components/layout/MobileNav'
@@ -16,7 +16,7 @@ import AdminPage from './pages/AdminPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import SSOCallback from './pages/SSOCallback'
 import { getUserRole } from './utils/roles'
-import { authApi } from './services/api'
+import { authApi, setAuthToken } from './services/api'
 
 const LectureAssistantPage = lazy(() => import('./pages/LectureAssistantPage'))
 const LectureViewPage = lazy(() => import('./pages/LectureViewPage'))
@@ -34,6 +34,7 @@ function RoleProtectedRoute({ role, allowedRoles, isAuthenticated, children }) {
 
 export default function App() {
   const { user } = useUser()
+  const { isSignedIn } = useAuth()
   const {
     points, level, streak, notifications, theme, role,
     incrementTimeSpent, setRole, adminAuthenticated,
@@ -51,6 +52,15 @@ export default function App() {
     if (adminAuthenticated) { setRole('admin'); return }
     if (user) setRole(getUserRole(user))
   }, [adminAuthenticated, setRole, user])
+
+  // Set clerk-based auth token for backend API calls
+  useEffect(() => {
+    if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+      setAuthToken(`clerk:${user.primaryEmailAddress.emailAddress}`)
+    } else if (!adminAuthenticated) {
+      setAuthToken(null)
+    }
+  }, [isSignedIn, user, adminAuthenticated])
 
   useEffect(() => {
     if (!user?.primaryEmailAddress?.emailAddress) {

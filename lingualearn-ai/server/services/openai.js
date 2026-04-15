@@ -33,14 +33,14 @@ const tryModels = async (models, buildMessages, fallback) => {
   for (const model of models) {
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 20000)
+        setTimeout(() => reject(new Error('timeout')), 60000)
       )
       const response = await Promise.race([
         client.chat.completions.create({
           model,
           messages: buildMessages(),
-          temperature: 0.4,
-          max_tokens: 2000,
+          temperature: 0.3,
+          max_tokens: 8000,
         }),
         timeoutPromise,
       ])
@@ -54,13 +54,22 @@ const tryModels = async (models, buildMessages, fallback) => {
   return fallback
 }
 
-export const askOpenAI = (prompt, fallback) =>
-  tryModels(TEXT_MODELS, () => [{ role: 'user', content: prompt }], fallback)
+// system + user message split — models obey language in system role much more reliably
+export const askOpenAI = (prompt, fallback, systemPrompt = null) =>
+  tryModels(
+    TEXT_MODELS,
+    () => [
+      { role: 'system', content: systemPrompt || 'You are a helpful assistant. Follow all instructions exactly.' },
+      { role: 'user', content: prompt },
+    ],
+    fallback
+  )
 
-export const askOpenAIWithFile = ({ prompt, fileBase64, fileType, fallback }) =>
+export const askOpenAIWithFile = ({ prompt, fileBase64, fileType, fallback, systemPrompt = null }) =>
   tryModels(
     VISION_MODELS,
     () => [
+      { role: 'system', content: systemPrompt || 'You are a helpful assistant. Follow all instructions exactly.' },
       {
         role: 'user',
         content: [

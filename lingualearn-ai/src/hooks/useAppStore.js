@@ -162,6 +162,7 @@ export const useAppStore = create((set) => ({
       theme: state.theme === 'dark' ? 'light' : 'dark',
     })),
   incrementPoints: (delta) => set((state) => ({ points: state.points + delta })),
+  clearLectureHistory: () => set({ lectureHistory: [] }),
   addLectureHistory: (lecture) =>
     set((state) => ({
       lectureHistory: [{ ...lecture, id: Date.now(), date: new Date().toISOString() }, ...state.lectureHistory].slice(0, 20),
