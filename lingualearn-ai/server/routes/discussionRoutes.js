@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   approveDiscussion,
   createDiscussion,
+  deleteDiscussion,
   listDiscussions,
   replyDiscussion,
   upvoteDiscussion,
@@ -14,6 +15,7 @@ router.get('/', listDiscussions)
 router.post('/', requireAuth, createDiscussion)
 router.post('/:id/reply', requireAuth, replyDiscussion)
 router.post('/:id/upvote', requireAuth, upvoteDiscussion)
+router.delete('/:id', requireAuth, deleteDiscussion)
 router.patch('/:id/approve', requireAuth, requireRole('admin'), approveDiscussion)
 
 export default router

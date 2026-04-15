@@ -9,12 +9,8 @@ const simulate = (text) => new Promise((resolve) => setTimeout(() => resolve(tex
 export const chat = async (req, res) => {
   const { message, context = '', language = 'English', discipline = 'General' } = req.body
   const fallback = await simulate(`[${language}] ${message}`)
-  const result = await askOpenAI(
-    `Translate the following text to ${language}. Output ONLY the translated text, nothing else. No explanations, no questions, no extra words.
-
-Text: ${message}`,
-    fallback
-  )
+  const systemPrompt = `You are LinguaLearn AI, an expert multilingual language tutor. Subject context: ${discipline}. Always respond in ${language}. Be concise (3-6 sentences). Translate, explain, quiz, or answer as requested.`
+  const result = await askOpenAI(message, fallback, systemPrompt)
   res.json({ result })
 }
 

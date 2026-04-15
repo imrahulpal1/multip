@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import Button from '../components/ui/Button'
 import { useAppStore } from '../hooks/useAppStore'
 import { forumApi, setAuthToken } from '../services/api'
-import { Languages, MessageSquare, ThumbsUp, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react'
+import { Languages, MessageSquare, ThumbsUp, ChevronDown, ChevronUp, AlertCircle, Trash2 } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { io } from 'socket.io-client'
 
@@ -66,7 +66,7 @@ function TiltCard({ children, className = '' }) {
 }
 
 // ── Flip Doubt Card ────────────────────────────────────────────────────────
-function DoubtCard({ q, viewerLanguage, onUpvote, onReply, typingId }) {
+function DoubtCard({ q, viewerLanguage, onUpvote, onReply, onDelete, typingId, isOwner }) {
   const [flipped, setFlipped] = useState(false)
   const [showOriginal, setShowOriginal] = useState(false)
   const [replyText, setReplyText] = useState('')
@@ -128,6 +128,14 @@ function DoubtCard({ q, viewerLanguage, onUpvote, onReply, typingId }) {
               >
                 <ThumbsUp size={12} /> {q.upvotes}
               </button>
+              {isOwner && (
+                <button
+                  onClick={onDelete}
+                  className="flex items-center gap-1.5 rounded-lg border border-red-400/20 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 text-xs text-red-300 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
             </div>
 
             <p className="rounded-xl bg-slate-900/50 p-3 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
@@ -267,6 +275,7 @@ export default function PeerLearningPage() {
     socketRef.current = socket
     socket.on('discussion:new', () => loadThreads())
     socket.on('discussion:reply', () => loadThreads())
+    socket.on('discussion:deleted', () => loadThreads())
     socket.on('discussion:typing', ({ threadId }) => {
       setTypingId(threadId)
       setTimeout(() => setTypingId(null), 3000)
@@ -292,8 +301,15 @@ export default function PeerLearningPage() {
       setPosting(false) }
   }
 
-  const handleReply = async (threadId, content) => {
+  const handleDelete = async (threadId) => {
     if (user?.primaryEmailAddress?.emailAddress) setAuthToken(`clerk:${user.primaryEmailAddress.emailAddress}`)
+    try {
+      await forumApi.remove(threadId)
+      await loadThreads()
+    } catch (e) { console.error('Delete failed:', e.message) }
+  }
+
+  const handleReply = async (threadId, content) => {
     try {
       await forumApi.reply(threadId, { content, language: viewerLanguage })
       completeChallenge('w1')
@@ -333,8 +349,10 @@ export default function PeerLearningPage() {
             q={q}
             viewerLanguage={viewerLanguage}
             typingId={typingId}
+            isOwner={q.user?.toString() === user?.id || q.userEmail === user?.primaryEmailAddress?.emailAddress}
             onUpvote={() => handleUpvote(q._id)}
             onReply={(text) => handleReply(q._id, text)}
+            onDelete={() => handleDelete(q._id)}
           />
         ))}
       </div>

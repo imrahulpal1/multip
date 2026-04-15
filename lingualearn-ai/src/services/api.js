@@ -69,6 +69,7 @@ export const forumApi = {
   reply: async (id, payload) => (await httpClient.post(`/discussions/${id}/reply`, payload)).data,
   upvote: async (id) => (await httpClient.post(`/discussions/${id}/upvote`)).data,
   approve: async (id) => (await httpClient.patch(`/discussions/${id}/approve`)).data,
+  remove: async (id) => (await httpClient.delete(`/discussions/${id}`)).data,
 }
 
 export const adminApi = {

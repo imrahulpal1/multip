@@ -13,9 +13,10 @@ const client = process.env.OPENAI_API_KEY
   : null
 
 const TEXT_MODELS = [
+  'nvidia/nemotron-3-super-120b-a12b:free',
   'meta-llama/llama-3.3-70b-instruct:free',
   'google/gemma-3-27b-it:free',
-  'openai/gpt-oss-20b:free',
+  'openai/gpt-oss-120b:free',
 ]
 
 const VISION_MODELS = [

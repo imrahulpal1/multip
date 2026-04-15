@@ -216,6 +216,16 @@ export const upvoteDiscussion = async (req, res) => {
   res.json(discussion)
 }
 
+export const deleteDiscussion = async (req, res) => {
+  const discussion = await Discussion.findById(req.params.id)
+  if (!discussion) return res.status(404).json({ message: 'Not found' })
+  if (discussion.user.toString() !== req.user.id)
+    return res.status(403).json({ message: 'Not authorized' })
+  await Discussion.findByIdAndDelete(req.params.id)
+  emit('discussion:deleted', { discussionId: req.params.id })
+  res.json({ success: true })
+}
+
 export const approveDiscussion = async (req, res) => {
   const discussion = await Discussion.findByIdAndUpdate(
     req.params.id,
